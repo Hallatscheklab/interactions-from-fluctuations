@@ -12,6 +12,7 @@ class Base(object):
     def __init__(self, counts=[], totcounts=[]):
         self.counts=counts
         self.totcounts=totcounts
+        self.A=None
         
     def infer(self):
         

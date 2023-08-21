@@ -2,7 +2,7 @@ import numpy as np
 from influ.base import Base
 import cvxpy as cp
 
-class F2_inference(Base):
+class F2(Base):
     """
     
     Class that infers migration matrix starting from a matrix of counts and non_missing tot_counts
@@ -19,8 +19,8 @@ class F2_inference(Base):
         """
         self.chunks_size=chunks_size
         self.from_counts_to_F2s()
-        self.migration_matrix=self.infer_A(self.F_X1_X0,self.F_X0_X0)
-        return self.migration_matrix.copy()
+        self.A=self.infer_A(self.F_X1_X0,self.F_X0_X0)
+        return self.A.copy()
 
     def from_counts_to_F2s(self):
         """ 

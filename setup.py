@@ -1,16 +1,16 @@
-from setuptools import setup, find_packages
+from setuptools import setup,find_packages
 
 
 data_files_to_include = [('', ['README.md', 'LICENSE'])]
 
 setup(name='influ',
       version='0.0.1',
-      description='Infer interactions from fluctuations,
+      description='Infer interactions from fluctuations',
       long_description='TODO',
       url='https://github.com/Hallatscheklab/interactions-from-fluctuations',
       author='Takashi Okada, Giulio Isacchini, Oskar Hallatschek',
       author_email='giulioisac@gmail.com',
-      license='GPLv3'
+      license='GPLv3',
       classifiers=[
             'Development Status :: 3 - Alpha',
             'Intended Audience :: Developers',
@@ -24,7 +24,7 @@ setup(name='influ',
             'Programming Language :: Python :: 3.6',
             ],
       packages=find_packages(),
-      install_requires=['numpy','cvxpy'],
+      install_requires=['numpy','cvxpy','scipy','cvxopt'],
 #      package_data = {
 #            'default_models': [],
 #            'default_models/human_T_alpha/': ['sonia/default_models/human_T_alpha/*'],
