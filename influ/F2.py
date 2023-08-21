@@ -41,7 +41,7 @@ class F2(Base):
                 sel=selection[i:i + n]
                 w.append(np.sum(sel))
                 r.append(f[sel].mean())
-            return weighted_avg_and_std(r,np.array(w)/np.sum(w))    
+            return weighted_avg_and_std(np.array(r),np.array(w)/np.sum(w))    
         
         ND,Ntraj,T=self.counts.shape
         freq=self.counts/self.totcounts
@@ -63,7 +63,6 @@ class F2(Base):
                     if i!=j: f00=(X0[i,:,t]-X0[j,:,t])**2 - correction_factor0[i,:,t]- correction_factor0[j,:,t]
                     else: f00=(X0[i,:,t]-X0[j,:,t])**2
                     self.F_X0_X0[t,i,j],self.F_X0_X0_std[t,i,j]=mean_chunks(f00,self.chunks_size,selection_lineages)
-    
                     
     def infer_A(self,F_X1_X0,F_X0_X0):
         """ 
