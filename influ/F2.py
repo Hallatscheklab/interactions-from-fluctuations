@@ -11,7 +11,7 @@ class F2(Base):
     
     """
         
-    def infer(self,chunks_size=5000):
+    def infer(self,chunks_size=1000):
         
         """ 
         This is the main function that runs the whole analysis.
@@ -21,36 +21,48 @@ class F2(Base):
         self.from_counts_to_F2s()
         self.A=self.infer_A(self.F_X1_X0,self.F_X0_X0)
         return self.A.copy()
-
+    
+    
     def from_counts_to_F2s(self):
         """ 
         This function builds the F2 and F2' matrices needed for inference
-        it returns an array of matrices, where the first index is T-1 long
+        Divides the genome into blocks of equal size and then does wighted average across block 
+        by weighting with the number of non-missing alleles within the block
         """
-        def mean_chunks(l, n): 
-            return np.array([np.mean(l[i:i + n],axis=0) for i in range(0, len(l), n)])
+        def weighted_avg_and_std(values, weights):
+            average = np.average(values, weights=weights)
+            variance = np.average((values-average)**2, weights=weights)
+            return average,np.sqrt(variance)
 
-        # inference with the right amount of time points
+        def mean_chunks(l, n, selection): 
+            r,w=[],[]
+            for i in range(0, len(l), n):
+                f=l[i:i + n]
+                sel=selection[i:i + n]
+                w.append(np.sum(sel))
+                r.append(f[sel].mean())
+            return weighted_avg_and_std(r,np.array(w)/np.sum(w))    
+        
+        ND,Ntraj,T=self.counts.shape
         freq=self.counts/self.totcounts
         correction_factor = freq*(1-freq)/(self.totcounts-1) # Patterson et al
         X0,X1=freq[:,:,:-1],freq[:,:,1:]
         correction_factor0,correction_factor1 = correction_factor[:,:,:-1],correction_factor[:,:,1:]
+        tot_counts0,tot_counts1 = self.totcounts[:,:,:-1],self.totcounts[:,:,1:]
         self.F_X1_X0=np.zeros((X0.shape[-1],freq.shape[0],freq.shape[0]))
         self.F_X0_X0=np.zeros((X0.shape[-1],freq.shape[0],freq.shape[0]))
         self.F_X1_X0_std=np.zeros((X0.shape[-1],freq.shape[0],freq.shape[0]))
         self.F_X0_X0_std=np.zeros((X0.shape[-1],freq.shape[0],freq.shape[0]))
         for i in range(freq.shape[0]):
-            for j in range(freq.shape[0]):
-                self.F_X1_X0[:,i,j]= np.mean(mean_chunks((X1[i]-X0[j])**2  - correction_factor0[i]- correction_factor1[j],self.chunks_size),axis=0)
-                self.F_X1_X0_std[:,i,j]= np.std(mean_chunks((X1[i]-X0[j])**2  - correction_factor0[i]- correction_factor1[j],self.chunks_size),axis=0)
-
-                if i!=j:
-                    self.F_X0_X0[:,i,j]= np.mean(mean_chunks((X0[i]-X0[j])**2 - correction_factor0[i]- correction_factor0[j],self.chunks_size),axis=0)
-                    self.F_X0_X0_std[:,i,j]= np.std(mean_chunks((X0[i]-X0[j])**2 - correction_factor0[i]- correction_factor0[j],self.chunks_size),axis=0)
-
-                else:
-                    self.F_X0_X0[:,i,j]= np.mean(mean_chunks((X0[i]-X0[j])**2,self.chunks_size),axis=0)
-                    self.F_X0_X0_std[:,i,j]= np.mean(mean_chunks((X0[i]-X0[j])**2,self.chunks_size),axis=0)
+            for j in range(freq.shape[0]):        
+                 for t in range(T-1):
+                    selection_lineages=np.logical_and(tot_counts1[i,:,t]>1,tot_counts0[j,:,t]>1)
+                    f10=(X1[i,:,t]-X0[j,:,t])**2  - correction_factor1[i,:,t]- correction_factor0[j,:,t]
+                    self.F_X1_X0[t,i,j],self.F_X1_X0_std[t,i,j]=mean_chunks(f10,self.chunks_size,selection_lineages)
+                    selection_lineages=np.logical_and(tot_counts0[i,:,t]>1,tot_counts0[j,:,t]>1)
+                    if i!=j: f00=(X0[i,:,t]-X0[j,:,t])**2 - correction_factor0[i,:,t]- correction_factor0[j,:,t]
+                    else: f00=(X0[i,:,t]-X0[j,:,t])**2
+                    self.F_X0_X0[t,i,j],self.F_X0_X0_std[t,i,j]=mean_chunks(f00,self.chunks_size,selection_lineages)
     
                     
     def infer_A(self,F_X1_X0,F_X0_X0):
