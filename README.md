@@ -1,4 +1,7 @@
 # interactions-from-fluctuations
 
-Here we need to setup the package for our analysis. 
-An idea would be to have basic class ß
+Here is the basic backbone of the package
+
+
+To install the package use:
+ ```python setup.py install```

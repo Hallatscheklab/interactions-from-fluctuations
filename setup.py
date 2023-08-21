@@ -31,6 +31,6 @@ setup(name='influ',
 #            },
       data_files = data_files_to_include,
       include_package_data=True,
-#      entry_points = {'console_scripts': [
-#            'sonia-evaluate=sonia.evaluate:main'},
+      entry_points = {'console_scripts': [
+            'influ=influ.infer:main']},
       zip_safe=False)

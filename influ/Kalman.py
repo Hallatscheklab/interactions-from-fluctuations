@@ -28,9 +28,10 @@ class Kalman(Base):
         self.A_old=np.copy(self.frac*self.A_LS+ (1.-self.frac)*self.Arand) # Start from a mixture of A_LS & homogenous
         self.Csn_old=np.ones(self.ND)
         self.Ne_old=np.array([Ne_old]*self.ND)
-        return self.EM(em_step_max=em_step_max,terminate_th=terminate_th,infer_samplenoise=infer_samplenoise,noisemode=noisemode, 
+        self.A=self.EM(em_step_max=em_step_max,terminate_th=terminate_th,infer_samplenoise=infer_samplenoise,noisemode=noisemode, 
                        ridge=ridge,penalty_mode=penalty_mode)[1].copy()
-        
+        return self.A.copy()
+    
     def EM(self,em_step_max=100,terminate_th=0.001,infer_samplenoise=True,noisemode=2, ridge=0.0,penalty_mode='L2'):
         ND=self.ND
         for step in range(em_step_max):
