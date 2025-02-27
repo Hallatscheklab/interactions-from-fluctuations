@@ -1,0 +1,37 @@
+[tool.setuptools]
+include-package-data = true
+
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "influ"
+version = "0.0.1"
+#dynamic = ["version"]
+requires-python = ">=3.9"
+dependencies = ['numpy','cvxpy','scipy','cvxopt']
+authors = [ {name = "Giulio Isacchini", email = "giulioisac@gmail.com"}]
+maintainers = [{name = "Giulio Isacchini", email = "giulioisac@gmail.com"}]
+description = 'Infer interactions from fluctuations'
+readme = "README.md"
+license = {file = "LICENSE"}
+classifiers=[
+            'Development Status :: 3 - Alpha',
+            'Intended Audience :: Developers',
+            'Intended Audience :: Healthcare Industry',
+            'Intended Audience :: Science/Research',
+            'Topic :: Scientific/Engineering :: Bio-Informatics',
+            'Topic :: Scientific/Engineering :: Physics',
+            'Topic :: Scientific/Engineering :: Medical Science Apps.',
+            'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+            'Natural Language :: English',
+            'Programming Language :: Python :: 3.9',
+            'Programming Language :: Python :: 3.10',
+            'Programming Language :: Python :: 3.11',
+            'Programming Language :: Python :: 3.12',
+            ]
+             
+[project.urls]
+Homepage = "https://github.com/Hallatscheklab/interactions-from-fluctuations"
+Documentation = "https://github.com/Hallatscheklab/interactions-from-fluctuations"
