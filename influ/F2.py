@@ -12,11 +12,6 @@ class F2(Base):
     -------
     infer(chunks_size=1000, n=5, fraction=0.8)
         Runs the whole analysis and returns the inferred matrix.
-    from_counts_to_F2s()
-        Builds the F2 and F2' matrices needed for inference. Divides the genome into blocks of equal size 
-        and then does weighted average across blocks by weighting with the number of non-missing alleles within the block.
-    infer_A(F_X1_X0, F_X0_X0)
-        Computes the migration matrix.
     """
         
     def infer(self, chunks_size=1000, n=5, fraction=0.8):
@@ -35,100 +30,105 @@ class F2(Base):
         self.As,self.F0,self.F1=[],[],[]
         self.chunks_size=chunks_size
         for i in range(n):
-            self.from_counts_to_F2s(fraction=fraction)
+            self.F_X1_X0, self.F_X0_X0, self.F_X1_X0_std, self.F_X0_X0_std = from_counts_to_F2s(
+                counts=self.counts,
+                tot_counts=self.tot_counts,
+                fraction=fraction,
+                chunks_size=chunks_size
+            )
             self.F0.append(self.F_X0_X0)
             self.F1.append(self.F_X1_X0)
-            self.As.append(self.infer_A(self.F_X1_X0,self.F_X0_X0))
+            self.As.append(infer_A(self.F_X1_X0,self.F_X0_X0))
         return np.mean(self.As,axis=0).copy()
     
+def from_counts_to_F2s(counts,totcounts,fraction:float=1.,chunks_size:int=5000) -> None:
+    """
+    This function builds the F2 and F2' matrices needed for inference.
+    It divides the genome into blocks of equal size and then performs a weighted average across blocks 
+    by weighting with the number of non-missing alleles within the block.
+    The function calculates the following:
+    - F_X1_X0: Matrix of F2 values between consecutive time points.
+    - F_X0_X0: Matrix of F2 values within the same time point.
+    - F_X1_X0_std: Standard deviation of F2 values between consecutive time points.
+    - F_X0_X0_std: Standard deviation of F2 values within the same time point.
+    The function uses the Patterson et al. correction factor to adjust for sampling variance.
+    """  
+    ND,Ntraj,T=counts.shape 
+    freq=counts/totcounts
+    correction_factor = freq*(1-freq)/(totcounts-1) # Patterson et al correction
+    X0,X1=freq[:,:,:-1],freq[:,:,1:]
+    correction_factor0,correction_factor1 = correction_factor[:,:,:-1],correction_factor[:,:,1:]
+    tot_counts0,tot_counts1 = totcounts[:,:,:-1],totcounts[:,:,1:]
+    F_X1_X0=np.zeros((X0.shape[-1],freq.shape[0],freq.shape[0]))
+    F_X0_X0=np.zeros((X0.shape[-1],freq.shape[0],freq.shape[0]))
+    F_X1_X0_std=np.zeros((X0.shape[-1],freq.shape[0],freq.shape[0]))
+    F_X0_X0_std=np.zeros((X0.shape[-1],freq.shape[0],freq.shape[0]))
+    for i in range(freq.shape[0]):
+        for j in range(freq.shape[0]):        
+                for t in range(T-1):
+                # Compute F2 values
+                selection_lineages=np.logical_and(tot_counts1[i,:,t]>1,tot_counts0[j,:,t]>1)
+                f10=(X1[i,:,t]-X0[j,:,t])**2  - correction_factor1[i,:,t]- correction_factor0[j,:,t]
+                F_X1_X0[t,i,j],F_X1_X0_std[t,i,j]=mean_chunks(f10,chunks_size,selection_lineages,fraction=fraction)
+                selection_lineages=np.logical_and(tot_counts0[i,:,t]>1,tot_counts0[j,:,t]>1)
+                if i!=j: f00=(X0[i,:,t]-X0[j,:,t])**2 - correction_factor0[i,:,t]- correction_factor0[j,:,t]
+                else: f00=(X0[i,:,t]-X0[j,:,t])**2
+                F_X0_X0[t,i,j],F_X0_X0_std[t,i,j]=mean_chunks(f00,chunks_size,selection_lineages,fraction=fraction)
+    return F_X1_X0, F_X0_X0, F_X1_X0_std, F_X0_X0_std
+                
+def infer_A(F_X1_X0,F_X0_X0):
+    """
+    Infer the matrix A from the given fluctuation matrices F_X1_X0 and F_X0_X0.
     
-    def from_counts_to_F2s(self,fraction:float) -> None:
-        """
-        This function builds the F2 and F2' matrices needed for inference.
-        It divides the genome into blocks of equal size and then performs a weighted average across blocks 
-        by weighting with the number of non-missing alleles within the block.
-        The function calculates the following:
-        - F_X1_X0: Matrix of F2 values between consecutive time points.
-        - F_X0_X0: Matrix of F2 values within the same time point.
-        - F_X1_X0_std: Standard deviation of F2 values between consecutive time points.
-        - F_X0_X0_std: Standard deviation of F2 values within the same time point.
-        The function uses the Patterson et al. correction factor to adjust for sampling variance.
-        """  
-        ND,Ntraj,T=self.counts.shape 
-        freq=self.counts/self.totcounts
-        correction_factor = freq*(1-freq)/(self.totcounts-1) # Patterson et al correction
-        X0,X1=freq[:,:,:-1],freq[:,:,1:]
-        correction_factor0,correction_factor1 = correction_factor[:,:,:-1],correction_factor[:,:,1:]
-        tot_counts0,tot_counts1 = self.totcounts[:,:,:-1],self.totcounts[:,:,1:]
-        self.F_X1_X0=np.zeros((X0.shape[-1],freq.shape[0],freq.shape[0]))
-        self.F_X0_X0=np.zeros((X0.shape[-1],freq.shape[0],freq.shape[0]))
-        self.F_X1_X0_std=np.zeros((X0.shape[-1],freq.shape[0],freq.shape[0]))
-        self.F_X0_X0_std=np.zeros((X0.shape[-1],freq.shape[0],freq.shape[0]))
-        for i in range(freq.shape[0]):
-            for j in range(freq.shape[0]):        
-                 for t in range(T-1):
-                    # Compute F2 values
-                    selection_lineages=np.logical_and(tot_counts1[i,:,t]>1,tot_counts0[j,:,t]>1)
-                    f10=(X1[i,:,t]-X0[j,:,t])**2  - correction_factor1[i,:,t]- correction_factor0[j,:,t]
-                    self.F_X1_X0[t,i,j],self.F_X1_X0_std[t,i,j]=mean_chunks(f10,self.chunks_size,selection_lineages,fraction=fraction)
-                    selection_lineages=np.logical_and(tot_counts0[i,:,t]>1,tot_counts0[j,:,t]>1)
-                    if i!=j: f00=(X0[i,:,t]-X0[j,:,t])**2 - correction_factor0[i,:,t]- correction_factor0[j,:,t]
-                    else: f00=(X0[i,:,t]-X0[j,:,t])**2
-                    self.F_X0_X0[t,i,j],self.F_X0_X0_std[t,i,j]=mean_chunks(f00,self.chunks_size,selection_lineages,fraction=fraction)
-                    
-    def infer_A(self,F_X1_X0,F_X0_X0):
-        """
-        Infer the matrix A from the given fluctuation matrices F_X1_X0 and F_X0_X0.
-        
-        Parameters:
-        -----------
-        F_X1_X0 : numpy.ndarray
-            A 3-dimensional array of shape (d, n, n) representing the fluctuation matrix at time t+1.
-        F_X0_X0 : numpy.ndarray
-            A 3-dimensional array of shape (d, n, n) representing the fluctuation matrix at time t.
-        
-        Returns:
-        --------
-        numpy.ndarray
-            A 2-dimensional array of shape (n, n) representing the inferred matrix A.
-        
-        Raises:
-        -------
-        AssertionError
-            If the input F_X1_X0 does not have 3 dimensions.
-        """
+    Parameters:
+    -----------
+    F_X1_X0 : numpy.ndarray
+        A 3-dimensional array of shape (d, n, n) representing the fluctuation matrix at time t+1.
+    F_X0_X0 : numpy.ndarray
+        A 3-dimensional array of shape (d, n, n) representing the fluctuation matrix at time t.
+    
+    Returns:
+    --------
+    numpy.ndarray
+        A 2-dimensional array of shape (n, n) representing the inferred matrix A.
+    
+    Raises:
+    -------
+    AssertionError
+        If the input F_X1_X0 does not have 3 dimensions.
+    """
 
-        assert len(F_X1_X0.shape)==3
-        results=[]
-        n=F_X1_X0.shape[1]
-        d=F_X1_X0.shape[0]
-        for i in range(n):
+    assert len(F_X1_X0.shape)==3
+    results=[]
+    n=F_X1_X0.shape[1]
+    d=F_X1_X0.shape[0]
+    for i in range(n):
 
-            # Define and solve the CVXPY problem.
-            a = cp.Variable(n)
-            B=np.zeros((d,n))
+        # Define and solve the CVXPY problem.
+        a = cp.Variable(n)
+        B=np.zeros((d,n))
+        for k in range(n):
+            B[:,k] = F_X1_X0[:,i,k] -  F_X1_X0[:,i,i]
+        M=np.zeros((d,n,n))
+        for j in range(n):
             for k in range(n):
-                B[:,k] = F_X1_X0[:,i,k] -  F_X1_X0[:,i,i]
-            M=np.zeros((d,n,n))
-            for j in range(n):
-                for k in range(n):
-                    M[:,j,k] = F_X0_X0[:,j,k] - F_X0_X0[:,j,i]
+                M[:,j,k] = F_X0_X0[:,j,k] - F_X0_X0[:,j,i]
 
-            B=B.flatten()
-            M=M.transpose(1,0,2).reshape(n,n*d)
-            
-            #Rescaling for numerical stability
-            rescale=np.mean([np.mean(B),np.mean(M)])
-            B*=1/rescale
-            M*=1/rescale
+        B=B.flatten()
+        M=M.transpose(1,0,2).reshape(n,n*d)
+        
+        #Rescaling for numerical stability
+        rescale=np.mean([np.mean(B),np.mean(M)])
+        B*=1/rescale
+        M*=1/rescale
 
-            cost = cp.sum_squares(B - a@M)
-            prob = cp.Problem(cp.Minimize(cost),[a>=1e-6,np.ones(n) @ a==1])
-            prob.solve()
-            results.append(a.value)
-        return np.array(results)
+        cost = cp.sum_squares(B - a@M)
+        prob = cp.Problem(cp.Minimize(cost),[a>=1e-6,np.ones(n) @ a==1])
+        prob.solve()
+        results.append(a.value)
+    return np.array(results)
 
-def weighted_avg_and_std(values, weights,fraction):
+def weighted_avg_and_std(values, weights):
     """
     Calculate the weighted average and standard deviation.
     
@@ -140,10 +140,6 @@ def weighted_avg_and_std(values, weights,fraction):
     Returns:
         tuple: A tuple containing the weighted average and the weighted standard deviation.
     """
-    # Subsample the values using the fraction
-    subsample_size = int(len(values) * fraction)
-    indices = np.random.choice(len(values), subsample_size, replace=False)
-    values,weights = values[indices],weights[indices]
     average = np.average(values, weights=weights)
     variance = np.average((values-average)**2, weights=weights)
     return average,np.sqrt(variance)
@@ -167,4 +163,7 @@ def mean_chunks(l, n, selection, fraction):
         sel=selection[i:i + n]
         w.append(np.sum(sel))
         r.append(f[sel].mean())
-    return weighted_avg_and_std(np.array(r),np.array(w)/np.sum(w), fraction)   
+    bootstrap = np.random.choice(np.arange(len(r)),int(len(r)*fraction))
+    r=np.array(r)[bootstrap]
+    w=np.array(w)[bootstrap]
+    return weighted_avg_and_std(r,w/np.sum(w)) 
