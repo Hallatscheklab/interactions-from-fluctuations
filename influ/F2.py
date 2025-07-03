@@ -65,7 +65,7 @@ def from_counts_to_F2s(counts,totcounts,fraction:float=1.,chunks_size:int=5000) 
     F_X0_X0_std=np.zeros((X0.shape[-1],freq.shape[0],freq.shape[0]))
     for i in range(freq.shape[0]):
         for j in range(freq.shape[0]):        
-                for t in range(T-1):
+            for t in range(T-1):
                 # Compute F2 values
                 selection_lineages=np.logical_and(tot_counts1[i,:,t]>1,tot_counts0[j,:,t]>1)
                 f10=(X1[i,:,t]-X0[j,:,t])**2  - correction_factor1[i,:,t]- correction_factor0[j,:,t]
