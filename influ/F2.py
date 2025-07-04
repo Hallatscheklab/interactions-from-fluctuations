@@ -32,7 +32,7 @@ class F2(Base):
         for i in range(n):
             self.F_X1_X0, self.F_X0_X0, self.F_X1_X0_std, self.F_X0_X0_std = from_counts_to_F2s(
                 counts=self.counts,
-                tot_counts=self.tot_counts,
+                totcounts=self.totcounts,
                 fraction=fraction,
                 chunks_size=chunks_size
             )

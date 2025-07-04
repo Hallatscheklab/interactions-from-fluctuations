@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def WF_sim(Npop,counts_per_demeweek, Csn, ND, T, A=None,Ntraj=100, freqini=[],sigma=0.5,low=-3,high=-1):
+def WF_sim(Npop,counts_per_demeweek, Csn, ND, T, A=None,Ntraj=100, X0=[],sigma=0.5,low=-3,high=-1):
     
     if type(Npop)==int:
         NS=np.array([Npop]*ND) #Controls the strength of stochasticity (in transition probability)
@@ -10,13 +10,13 @@ def WF_sim(Npop,counts_per_demeweek, Csn, ND, T, A=None,Ntraj=100, freqini=[],si
     
     B=np.zeros((T,Ntraj,ND))
     
-    if freqini ==[]: 
+    if X0 ==[]: 
         # random allele frequencies
         X0=10**(np.random.uniform(low=low, high=high,size=Ntraj))
-        for l in range(Ntraj): 
-            for i in range(ND):
-                X=np.clip(X0[l]+np.random.randn()*np.sqrt(X0[l])*sigma,0,1)
-                B[0,l,i]=np.random.binomial(NS[i], X, size=1)/NS[i]
+    for l in range(Ntraj): 
+        for i in range(ND):
+            X=np.clip(X0[l]+np.random.randn()*np.sqrt(X0[l])*sigma,0,1)
+            B[0,l,i]=np.random.binomial(NS[i], X, size=1)/NS[i]
         
     for t in range(1,T):
         aux = B[t-1,:,:].T
