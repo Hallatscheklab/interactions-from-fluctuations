@@ -5,6 +5,7 @@ The functionalities of the package can be accessed via the Python API or via com
 
 ## References
 [1] [Inferring Migration Networks with Time-Lagged F2 Statistics, Isacchini et al, 2026](https://www.biorxiv.org/content/10.64898/2026.03.12.710875v1)
+
 [2] [Uncovering heterogeneous intercommunity disease transmission from neutral allele frequency time series, Okada et al, 2025](https://www.pnas.org/doi/10.1073/pnas.2500663122)
 
 ## Overview
