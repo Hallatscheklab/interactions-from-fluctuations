@@ -24,7 +24,7 @@ setup(name='influ',
             'Programming Language :: Python :: 3.6',
             ],
       packages=find_packages(),
-      install_requires=['numpy','cvxpy','scipy','cvxopt'],
+      install_requires=['numpy<2','cvxpy','scipy','cvxopt'],
 #      package_data = {
 #            'default_models': [],
 #            'default_models/human_T_alpha/': ['sonia/default_models/human_T_alpha/*'],
