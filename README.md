@@ -228,6 +228,13 @@ A_LS = DMD(counts, totcounts).infer()
 # EM / Kalman filter
 A_EM = Kalman(counts + 1, totcounts).infer()
 ```
+### Expected run time for the demo
+
+Running the demo in `test/basic_example.ipynb` end-to-end — simulating the
+example dataset (5 demes, 200 lineages, 5 time points) and running all four
+inference methods (F2, DMD-LS, DMD-TLS, Kalman-EM) — takes **a few seconds
+(< 10 s)** on a normal desktop computer. Runtime is dominated by the
+Kalman-EM step (~3–4 s); F2 and DMD each finish in well under a second.
 
 ## Contributing
 
