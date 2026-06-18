@@ -161,6 +161,24 @@ python setup.py install
 
 **Requirements:** Python >= 3.9, `numpy`, `scipy`, `cvxpy`, `cvxopt`
 
+## Installation time
+
+Installing from a clean environment typically takes **under a minute**
+(~20–30 s measured on Python 3.12, Linux x86-64), since `influ` itself is
+pure Python and all dependencies install as prebuilt wheels.
+
+On platforms where wheels are unavailable (older Python, uncommon
+architectures, or no C/Fortran toolchain), `cvxpy`, `cvxopt`, and `scipy`
+may build from source, which can extend install time to 10–20+ minutes.
+In that case, installing the heavy dependencies via conda first is
+recommended:
+
+    conda install -c conda-forge numpy scipy cvxpy cvxopt
+    pip install .
+
+**Tested with:** Python 3.12, pip (wheels) — numpy 2.4, scipy 1.17,
+cvxpy 1.9, cvxopt 1.3.
+
 ## Command-line interface
 
 The package exposes an `influ` command after installation. It reads a CSV file and writes the inferred matrix to stdout.
